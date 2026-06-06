@@ -2,18 +2,19 @@
 // Required because Vercel doesn't auto-detect TanStack Start as a framework, so it
 // would otherwise treat the entire project as a static site and return 404 for all routes.
 //
-// Why Node.js runtime (not Edge):
-//   TanStack Start's server bundle uses node:events and other Node.js built-ins that
-//   are unavailable in Vercel's Edge Runtime, causing "unsupported modules" errors.
+// Why Edge Runtime (not nodejs20.x):
+//   TanStack Start's server exports `export default { fetch(request) }` — the Web
+//   Workers / Service Workers pattern. Vercel Edge Runtime is the Web API environment
+//   that natively supports this. Node.js runtime would receive the handler with
+//   (IncomingMessage, ServerResponse) arguments, creating a type mismatch that causes
+//   the Promise returned by handler.fetch() to hang silently → 504 timeout.
 //
-// Why the _server.js wrapper:
-//   TanStack Start exports `export default { fetch(request) }` (Cloudflare Workers style).
-//   Vercel's Node.js runtime expects `export default (request: Request) => Response`.
-//   The wrapper bridges both export formats safely.
+//   The previous "unsupported modules" error on Edge was caused by the old Cloudflare
+//   Workers build format (wrangler.json). With cloudflare:false in vite.config.ts the
+//   bundle is standard Web API–compatible and runs fine on Edge.
 //
-// Why server.js (not index.js):
-//   vite.config.ts sets tanstackStart.server.entry = "server", so TanStack Start
-//   names the server bundle dist/server/server.js (not dist/server/index.js).
+// Why vite.config.ts entry:"server" → server.js (not index.js):
+//   TanStack Start names the server output file after the entry config value.
 
 import { cpSync, mkdirSync, writeFileSync, rmSync, renameSync, existsSync } from 'node:fs';
 
@@ -26,7 +27,7 @@ mkdirSync(`${out}/static`, { recursive: true });
 // Static client bundle → CDN
 cpSync('dist/client', `${out}/static`, { recursive: true });
 
-// Server bundle → Vercel Serverless Function (Node.js 20)
+// Server bundle → Vercel Edge Function
 cpSync('dist/server', `${out}/functions/index.func`, { recursive: true });
 
 // Locate the server entry — TanStack Start names it after the entry config value.
@@ -43,22 +44,18 @@ if (!entryName) {
   process.exit(1);
 }
 
-// Rename original entry so the wrapper can import it
-renameSync(`${funcDir}/${entryName}`, `${funcDir}/_server.js`);
-
-// Adapter: TanStack Start exports { fetch(request) }, Vercel Node.js needs (request) => Response
-writeFileSync(
-  `${funcDir}/index.js`,
-  "import h from './_server.js';\n" +
-  "export default (req) => typeof h.fetch === 'function' ? h.fetch(req) : h(req);\n"
-);
+// Edge Runtime uses the Vercel Edge entrypoint convention: the file must be named index.js.
+// Rename the TanStack Start server entry to index.js so Edge can find it.
+// No wrapper needed — Edge Runtime natively supports `export default { fetch(request) }`.
+if (entryName !== 'index.js') {
+  renameSync(`${funcDir}/${entryName}`, `${funcDir}/index.js`);
+}
 
 writeFileSync(
   `${funcDir}/.vc-config.json`,
   JSON.stringify({
-    runtime: 'nodejs20.x',
-    handler: 'index.js',
-    maxDuration: 60,
+    runtime: 'edge',
+    entrypoint: 'index.js',
   })
 );
 
@@ -81,10 +78,10 @@ writeFileSync(
       },
       // Serve any matching file from the static CDN layer first
       { handle: 'filesystem' },
-      // Everything else (HTML routes, API paths) → SSR serverless function
+      // Everything else (HTML routes, API paths) → SSR Edge Function
       { src: '/(.*)', dest: '/index' },
     ],
   })
 );
 
-console.log(`✓ .vercel/output/ created (entry: ${entryName} → _server.js): Node.js function + static assets`);
+console.log(`✓ .vercel/output/ created (entry: ${entryName} → index.js): Edge function + static assets`);

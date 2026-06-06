@@ -35,8 +35,17 @@ export default async (configEnv: ConfigEnv) => {
       define: {
         // Bake all server-side env vars into the server bundle at build time.
         // This means process.env.X in server code resolves without any runtime env lookup.
-        "process.env.SUPABASE_URL": JSON.stringify(env.SUPABASE_URL ?? ""),
-        "process.env.SUPABASE_PUBLISHABLE_KEY": JSON.stringify(env.SUPABASE_PUBLISHABLE_KEY ?? ""),
+        // Supabase anon key and project URL are safe to embed — Supabase's security
+        // model is row-level (RLS policies), not key-level. These fallbacks ensure the
+        // app loads on Vercel even if env vars aren't pushed to the dashboard.
+        "process.env.SUPABASE_URL": JSON.stringify(
+          env.SUPABASE_URL || "https://ngigrwqckylbdpbjrwls.supabase.co"
+        ),
+        "process.env.SUPABASE_PUBLISHABLE_KEY": JSON.stringify(
+          env.SUPABASE_PUBLISHABLE_KEY ||
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5naWdyd3Fja3lsYmRwYmpyd2xzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDc3NjEsImV4cCI6MjA5NDQyMzc2MX0.GKRCEM2XBNFicC0QT9QMMAGGGXR58yDFpXoYsDcerVE"
+        ),
+        // GROQ_API_KEY must be set in Vercel env vars — never hard-code a secret.
         "process.env.GROQ_API_KEY": JSON.stringify(env.GROQ_API_KEY ?? ""),
         "process.env.DIFY_ANALYST_API_KEY": JSON.stringify(env.DIFY_ANALYST_API_KEY ?? ""),
         "process.env.DIFY_SCIENTIST_API_KEY": JSON.stringify(env.DIFY_SCIENTIST_API_KEY ?? ""),

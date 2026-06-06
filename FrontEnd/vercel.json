@@ -1,7 +1,10 @@
 {
   "buildCommand": "npm run build && node scripts/vercel-postbuild.mjs",
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "VITE_SUPABASE_URL": "https://ngigrwqckylbdpbjrwls.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5naWdyd3Fja3lsYmRwYmpyd2xzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NDc3NjEsImV4cCI6MjA5NDQyMzc2MX0.GKRCEM2XBNFicC0QT9QMMAGGGXR58yDFpXoYsDcerVE",
+    "VITE_SUPABASE_PROJECT_ID": "ngigrwqckylbdpbjrwls"
   },
   "regions": ["iad1"]
 }
