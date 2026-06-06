@@ -2,19 +2,26 @@
 // Required because Vercel doesn't auto-detect TanStack Start as a framework, so it
 // would otherwise treat the entire project as a static site and return 404 for all routes.
 //
-// Why Edge Runtime:
-//   TanStack Start's server exports `export default { fetch(request) }` — the Web
-//   Workers pattern. Edge Runtime is the Web API environment that natively supports it.
+// Why Node.js runtime (not Edge):
+//   The bundled npm dependencies (h3-v2, @supabase/supabase-js, xlsx, etc.) use
+//   node:stream, node:path, node:process — Node.js built-ins that Vercel's Edge
+//   Runtime does not support. Node.js 20.x runtime has all of these natively.
 //
 // Why ssr.noExternal:true in vite.config.ts is required:
-//   Without it, Vite externalises ALL npm packages (assumes node_modules at runtime).
-//   Edge Runtime has no node_modules — everything must be bundled into the output.
-//   noExternal:true inlines all deps; the chunks become self-contained.
+//   Vite SSR externalises npm packages by default (assumes node_modules at runtime).
+//   Our Build Output API function directory contains only dist/server/ — no node_modules.
+//   noExternal:true inlines every npm dep so the output is fully self-contained.
 //
-// Why we do NOT rename server.js:
-//   The asset chunks inside dist/server/assets/ import ../server.js via relative path.
-//   Renaming server.js breaks those imports. We point the Edge entrypoint directly at
-//   the real filename instead.
+// Why we write an HTTP adapter (index.js):
+//   Vercel's Node.js runtime invokes handlers as (IncomingMessage, ServerResponse) —
+//   the classic Node.js HTTP pattern. TanStack Start's server exports
+//   `{ fetch(request: Request) }` — the Web Workers / Service Workers pattern.
+//   The adapter converts between the two so Vercel calls res.end() as expected,
+//   and TanStack Start receives a proper Web API Request object.
+//
+// Why we add package.json { "type":"module" }:
+//   dist/server/ contains ESM files (import/export). Without a package.json declaring
+//   type:module, Node.js treats .js files as CommonJS and chokes on ESM syntax.
 
 import { cpSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 
@@ -27,8 +34,15 @@ mkdirSync(`${out}/static`, { recursive: true });
 // Static client bundle → CDN
 cpSync('dist/client', `${out}/static`, { recursive: true });
 
-// Server bundle → Vercel Edge Function (fully self-contained with noExternal:true)
+// Server bundle → Vercel Node.js Serverless Function (self-contained via noExternal)
 cpSync('dist/server', `${out}/functions/index.func`, { recursive: true });
+
+// ESM declaration — without this Node.js treats .js as CommonJS and crashes on
+// the import/export syntax produced by Vite's SSR build.
+writeFileSync(
+  `${out}/functions/index.func/package.json`,
+  JSON.stringify({ type: 'module' })
+);
 
 // Locate the server entry — TanStack Start names it after the entry config value.
 // entry:"server" → server.js; entry:"index" (default) → index.js.
@@ -44,13 +58,84 @@ if (!entryName) {
   process.exit(1);
 }
 
-// Point the Edge entrypoint at the real file — no renaming so that ../server.js
-// relative imports from inside assets/ continue to resolve correctly.
+// Node.js HTTP adapter ─────────────────────────────────────────────────────────
+// Vercel Node.js runtime calls:  handler(req: IncomingMessage, res: ServerResponse)
+// TanStack Start expects:         handler.fetch(request: Request): Promise<Response>
+// The adapter bridges the two.
+//
+// We import the TanStack Start entry as a side-effect-free named import so that
+// the relative ../server.js path inside the asset chunks is never disturbed.
+writeFileSync(
+  `${funcDir}/index.js`,
+  `import serverHandler from './${entryName}';
+const h = typeof serverHandler.fetch === 'function' ? serverHandler : { fetch: serverHandler };
+
+export default async function handler(req, res) {
+  // Reconstruct absolute URL from Vercel-injected forwarded headers
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const host  = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+  const url   = new URL(req.url, proto + '://' + host);
+
+  // Convert Node.js headers → Web API Headers
+  const headers = new Headers();
+  for (const [key, val] of Object.entries(req.headers)) {
+    if (val == null) continue;
+    if (Array.isArray(val)) val.forEach(v => headers.append(key, v));
+    else headers.set(key, val);
+  }
+
+  // Buffer the request body (POST/PUT/PATCH etc.)
+  let body = null;
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    if (chunks.length > 0) body = Buffer.concat(chunks);
+  }
+
+  const webReq = new Request(url.toString(), { method: req.method, headers, body });
+
+  // Call TanStack Start SSR handler
+  let webRes;
+  try {
+    webRes = await h.fetch(webReq, undefined, undefined);
+  } catch (err) {
+    console.error('[SSR handler error]', err);
+    res.statusCode = 500;
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.end('<h1>500 Internal Server Error</h1>');
+    return;
+  }
+
+  // Write status + headers to Node.js response
+  res.statusCode = webRes.status;
+  for (const [key, val] of webRes.headers.entries()) {
+    res.setHeader(key, val);
+  }
+
+  // Stream the response body (TanStack Start uses streaming SSR)
+  if (webRes.body) {
+    const reader = webRes.body.getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+  res.end();
+}
+`
+);
+
 writeFileSync(
   `${funcDir}/.vc-config.json`,
   JSON.stringify({
-    runtime: 'edge',
-    entrypoint: entryName,
+    runtime: 'nodejs20.x',
+    handler: 'index.js',
+    maxDuration: 30,
   })
 );
 
@@ -73,10 +158,10 @@ writeFileSync(
       },
       // Serve any matching file from the static CDN layer first
       { handle: 'filesystem' },
-      // Everything else (HTML routes, API paths) → SSR Edge Function
+      // Everything else (HTML routes, API paths) → SSR Node.js function
       { src: '/(.*)', dest: '/index' },
     ],
   })
 );
 
-console.log(`✓ .vercel/output/ created (entry: ${entryName}): Edge function + static assets`);
+console.log(`✓ .vercel/output/ created (entry: ${entryName}): Node.js function + static assets`);
