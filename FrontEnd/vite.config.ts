@@ -32,6 +32,12 @@ export default async (configEnv: ConfigEnv) => {
       server: { entry: "server" },
     },
     vite: {
+      ssr: {
+        // Bundle ALL npm packages into the server output so the Edge Function is
+        // self-contained. Without this, Vite externalises every npm package and
+        // assumes node_modules is available at runtime — which it isn't on Edge.
+        noExternal: true,
+      },
       define: {
         // Bake all server-side env vars into the server bundle at build time.
         // This means process.env.X in server code resolves without any runtime env lookup.
