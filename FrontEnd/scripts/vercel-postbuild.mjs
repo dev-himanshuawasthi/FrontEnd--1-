@@ -9,7 +9,11 @@
 // Why the _server.js wrapper:
 //   TanStack Start exports `export default { fetch(request) }` (Cloudflare Workers style).
 //   Vercel's Node.js runtime expects `export default (request: Request) => Response`.
-//   The wrapper bridges both formats.
+//   The wrapper bridges both export formats safely.
+//
+// Why server.js (not index.js):
+//   vite.config.ts sets tanstackStart.server.entry = "server", so TanStack Start
+//   names the server bundle dist/server/server.js (not dist/server/index.js).
 
 import { cpSync, mkdirSync, writeFileSync, rmSync, renameSync, existsSync } from 'node:fs';
 
@@ -25,24 +29,32 @@ cpSync('dist/client', `${out}/static`, { recursive: true });
 // Server bundle → Vercel Serverless Function (Node.js 20)
 cpSync('dist/server', `${out}/functions/index.func`, { recursive: true });
 
-const entryPath = `${out}/functions/index.func/index.js`;
-if (!existsSync(entryPath)) {
-  console.error('ERROR: dist/server/index.js not found — build may have failed or changed output paths.');
+// Locate the server entry — TanStack Start names it after the entry config value.
+// entry:"server" → server.js; entry:"index" (default) → index.js.
+const funcDir = `${out}/functions/index.func`;
+const entryName =
+  existsSync(`${funcDir}/server.js`) ? 'server.js' :
+  existsSync(`${funcDir}/index.js`)  ? 'index.js'  : null;
+
+if (!entryName) {
+  const { readdirSync } = await import('node:fs');
+  const files = readdirSync(funcDir);
+  console.error(`ERROR: could not locate server entry in dist/server/. Found: ${files.join(', ')}`);
   process.exit(1);
 }
 
 // Rename original entry so the wrapper can import it
-renameSync(entryPath, `${out}/functions/index.func/_server.js`);
+renameSync(`${funcDir}/${entryName}`, `${funcDir}/_server.js`);
 
 // Adapter: TanStack Start exports { fetch(request) }, Vercel Node.js needs (request) => Response
 writeFileSync(
-  entryPath,
+  `${funcDir}/index.js`,
   "import h from './_server.js';\n" +
   "export default (req) => typeof h.fetch === 'function' ? h.fetch(req) : h(req);\n"
 );
 
 writeFileSync(
-  `${out}/functions/index.func/.vc-config.json`,
+  `${funcDir}/.vc-config.json`,
   JSON.stringify({
     runtime: 'nodejs20.x',
     handler: 'index.js',
@@ -75,4 +87,4 @@ writeFileSync(
   })
 );
 
-console.log('✓ .vercel/output/ created: Node.js serverless function + static assets configured');
+console.log(`✓ .vercel/output/ created (entry: ${entryName} → _server.js): Node.js function + static assets`);
