@@ -5,12 +5,6 @@
     "NODE_ENV": "production"
   },
   "regions": ["iad1"],
-  "functions": {
-    "**": {
-      "maxDuration": 60,
-      "memory": 1024
-    }
-  },
   "headers": [
     {
       "source": "/api/:path*",
