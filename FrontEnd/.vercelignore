@@ -1,0 +1,10 @@
+node_modules
+.git
+.env.local
+.DS_Store
+supabase/migrations
+DEBUGGING_GUIDE.md
+TESTING_STEPS.md
+test-excel-parser.js
+*.md
+.gitignore

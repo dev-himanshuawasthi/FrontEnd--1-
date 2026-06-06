@@ -1,0 +1,1 @@
+revoke execute on function public.bump_thread_updated_at() from public, anon, authenticated;

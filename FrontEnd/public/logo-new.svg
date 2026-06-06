@@ -1,0 +1,59 @@
+<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <defs>
+    <linearGradient id="cyanBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#06b6d4"/>
+      <stop offset="50%" stopColor="#06d9ff"/>
+      <stop offset="100%" stopColor="#0b5bc0"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Top Left Network -->
+  <circle cx="60" cy="45" r="6" fill="url(#cyanBlue)"/>
+  <circle cx="85" cy="65" r="5" fill="url(#cyanBlue)" opacity="0.9"/>
+  <circle cx="105" cy="50" r="4" fill="url(#cyanBlue)" opacity="0.8"/>
+  <line x1="60" y1="45" x2="85" y2="65" stroke="url(#cyanBlue)" strokeWidth="2.5" opacity="0.7"/>
+  <line x1="85" y1="65" x2="105" y2="50" stroke="url(#cyanBlue)" strokeWidth="2.5" opacity="0.7"/>
+
+  <!-- Bar Chart Top Right -->
+  <rect x="150" y="35" width="12" height="50" fill="url(#cyanBlue)" opacity="0.85" filter="url(#glow)"/>
+  <rect x="170" y="20" width="12" height="65" fill="url(#cyanBlue)" filter="url(#glow)"/>
+  <rect x="190" y="40" width="12" height="45" fill="url(#cyanBlue)" opacity="0.9" filter="url(#glow)"/>
+
+  <!-- Arrow pointing up -->
+  <line x1="175" y1="95" x2="175" y2="55" stroke="url(#cyanBlue)" strokeWidth="3" filter="url(#glow)"/>
+  <polygon points="175,50 168,62 182,62" fill="url(#cyanBlue)" filter="url(#glow)"/>
+
+  <!-- Main D Circle - Outer -->
+  <circle cx="100" cy="128" r="70" fill="none" stroke="url(#cyanBlue)" strokeWidth="5" opacity="0.95" filter="url(#glow)"/>
+
+  <!-- Inner decorative circle -->
+  <circle cx="100" cy="128" r="42" fill="none" stroke="url(#cyanBlue)" strokeWidth="3" opacity="0.6"/>
+
+  <!-- Network nodes inside D -->
+  <circle cx="70" cy="110" r="3" fill="url(#cyanBlue)" opacity="0.8"/>
+  <circle cx="95" cy="128" r="3" fill="url(#cyanBlue)" opacity="0.8"/>
+  <circle cx="120" cy="115" r="3" fill="url(#cyanBlue)" opacity="0.8"/>
+  <circle cx="105" cy="155" r="3" fill="url(#cyanBlue)" opacity="0.8"/>
+  
+  <line x1="70" y1="110" x2="95" y2="128" stroke="url(#cyanBlue)" strokeWidth="1.5" opacity="0.5"/>
+  <line x1="95" y1="128" x2="120" y2="115" stroke="url(#cyanBlue)" strokeWidth="1.5" opacity="0.5"/>
+  <line x1="120" y1="115" x2="105" y2="155" stroke="url(#cyanBlue)" strokeWidth="1.5" opacity="0.5"/>
+  <line x1="105" y1="155" x2="70" y2="110" stroke="url(#cyanBlue)" strokeWidth="1.5" opacity="0.5"/>
+
+  <!-- Binary text -->
+  <text x="165" y="185" fontSize="16" fontWeight="bold" fontFamily="monospace" fill="url(#cyanBlue)" opacity="0.9" filter="url(#glow)">01001</text>
+
+  <!-- Bottom network -->
+  <circle cx="55" cy="205" r="3.5" fill="url(#cyanBlue)" opacity="0.85"/>
+  <circle cx="85" cy="220" r="3" fill="url(#cyanBlue)" opacity="0.75"/>
+  <circle cx="115" cy="215" r="2.5" fill="url(#cyanBlue)" opacity="0.7"/>
+  <line x1="55" y1="205" x2="85" y2="220" stroke="url(#cyanBlue)" strokeWidth="2" opacity="0.6"/>
+  <line x1="85" y1="220" x2="115" y2="215" stroke="url(#cyanBlue)" strokeWidth="2" opacity="0.6"/>
+</svg>

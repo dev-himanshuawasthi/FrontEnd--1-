@@ -1,0 +1,54 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#06b6d4"/>
+      <stop offset="100%" stopColor="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Network nodes top left -->
+  <circle cx="45" cy="35" r="5" fill="url(#logoGrad)"/>
+  <circle cx="65" cy="50" r="4" fill="url(#logoGrad)" opacity="0.9"/>
+  <circle cx="80" cy="40" r="3" fill="url(#logoGrad)" opacity="0.8"/>
+  <line x1="45" y1="35" x2="65" y2="50" stroke="url(#logoGrad)" strokeWidth="2" opacity="0.6"/>
+  <line x1="65" y1="50" x2="80" y2="40" stroke="url(#logoGrad)" strokeWidth="2" opacity="0.6"/>
+  
+  <!-- Connector to main circle -->
+  <line x1="80" y1="40" x2="90" y2="55" stroke="url(#logoGrad)" strokeWidth="2" opacity="0.5"/>
+  
+  <!-- Bar chart top right -->
+  <rect x="135" y="30" width="10" height="40" fill="url(#logoGrad)" opacity="0.9"/>
+  <rect x="152" y="18" width="10" height="52" fill="url(#logoGrad)"/>
+  <rect x="169" y="35" width="10" height="35" fill="url(#logoGrad)" opacity="0.85"/>
+  
+  <!-- Arrow pointing up -->
+  <line x1="160" y1="80" x2="160" y2="45" stroke="url(#logoGrad)" strokeWidth="2.5"/>
+  <polygon points="160,40 155,50 165,50" fill="url(#logoGrad)"/>
+  
+  <!-- Main D shape - outer circle -->
+  <circle cx="80" cy="100" r="55" fill="none" stroke="url(#logoGrad)" strokeWidth="4" opacity="0.95"/>
+  
+  <!-- Inner detail circle -->
+  <circle cx="80" cy="100" r="32" fill="none" stroke="url(#logoGrad)" strokeWidth="2.5" opacity="0.7"/>
+  
+  <!-- Network inside D -->
+  <circle cx="55" cy="85" r="2.5" fill="url(#logoGrad)" opacity="0.8"/>
+  <circle cx="75" cy="100" r="2.5" fill="url(#logoGrad)" opacity="0.8"/>
+  <circle cx="95" cy="92" r="2.5" fill="url(#logoGrad)" opacity="0.8"/>
+  <circle cx="80" cy="122" r="2.5" fill="url(#logoGrad)" opacity="0.8"/>
+  
+  <line x1="55" y1="85" x2="75" y2="100" stroke="url(#logoGrad)" strokeWidth="1.5" opacity="0.5"/>
+  <line x1="75" y1="100" x2="95" y2="92" stroke="url(#logoGrad)" strokeWidth="1.5" opacity="0.5"/>
+  <line x1="95" y1="92" x2="80" y2="122" stroke="url(#logoGrad)" strokeWidth="1.5" opacity="0.5"/>
+  <line x1="80" y1="122" x2="55" y2="85" stroke="url(#logoGrad)" strokeWidth="1.5" opacity="0.5"/>
+  
+  <!-- Binary text -->
+  <text x="140" y="155" fontSize="14" fontWeight="bold" fontFamily="monospace" fill="url(#logoGrad)" opacity="0.85">01001</text>
+  
+  <!-- Bottom network -->
+  <circle cx="50" cy="165" r="3" fill="url(#logoGrad)" opacity="0.8"/>
+  <circle cx="72" cy="175" r="2.5" fill="url(#logoGrad)" opacity="0.7"/>
+  <circle cx="92" cy="170" r="2" fill="url(#logoGrad)" opacity="0.6"/>
+  <line x1="50" y1="165" x2="72" y2="175" stroke="url(#logoGrad)" strokeWidth="1.5" opacity="0.5"/>
+  <line x1="72" y1="175" x2="92" y2="170" stroke="url(#logoGrad)" strokeWidth="1.5" opacity="0.5"/>
+</svg>
