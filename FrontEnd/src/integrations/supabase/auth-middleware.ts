@@ -2,7 +2,15 @@
 import { createMiddleware } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws'
 import type { Database } from './types'
+
+// Node.js 20 (Vercel's runtime) has no native WebSocket — @supabase/realtime-js
+// throws synchronously from its RealtimeClient constructor (which createClient
+// always instantiates) unless a transport is provided. The app never uses
+// Realtime on the server, but we still must hand it a working constructor.
+type RealtimeClientOptions = NonNullable<Parameters<typeof createClient>[2]>['realtime']
+const realtimeOptions = { transport: ws as unknown as RealtimeClientOptions['transport'] }
 
 
 
@@ -57,6 +65,7 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
           persistSession: false,
           autoRefreshToken: false,
         },
+        realtime: realtimeOptions,
       }
     );
 

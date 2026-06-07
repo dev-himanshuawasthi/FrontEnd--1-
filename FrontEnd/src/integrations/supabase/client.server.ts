@@ -3,7 +3,15 @@
 // Use this for admin operations in server functions and server routes only.
 // For user-authenticated queries (with RLS), use the auth middleware instead.
 import { createClient } from '@supabase/supabase-js';
+import ws from 'ws';
 import type { Database } from './types';
+
+// Node.js 20 (Vercel's runtime) has no native WebSocket — @supabase/realtime-js
+// throws synchronously from its RealtimeClient constructor (which createClient
+// always instantiates) unless a transport is provided. The app never uses
+// Realtime on the server, but we still must hand it a working constructor.
+type RealtimeClientOptions = NonNullable<Parameters<typeof createClient>[2]>['realtime'];
+const realtimeOptions = { transport: ws as unknown as RealtimeClientOptions['transport'] };
 
 function createSupabaseAdminClient() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -24,7 +32,8 @@ function createSupabaseAdminClient() {
       storage: undefined,
       persistSession: false,
       autoRefreshToken: false,
-    }
+    },
+    realtime: realtimeOptions,
   });
 }
 
